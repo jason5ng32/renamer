@@ -69,10 +69,16 @@ State.of.Divinity.1996.S01.E22.wow.mkv
 State.of.Divinity.1996.S01.E23.wow.mkv
 ```
 
-选择影视模式，匹配类型选择 `S\d+\.E(\d+)`，前缀输入 `State.of.Divinity.S01`，保留原后缀，结果：
+选择影视模式，匹配类型选择 `E(\d+)`，前缀输入 `This.Is.Us.S01`，保留原后缀，结果：
 ```
-State.of.Divinity.S01.E22.wow.mkv
-State.of.Divinity.S01.E23.wow.mkv
+This.Is.Us.S01.E22.mkv
+This.Is.Us.S01.E23.mkv
+```
+
+如果你选择自定义后缀，并输入 `HDTV`，则结果为：
+```
+This.Is.Us.S01.E22.HDTV.mkv
+This.Is.Us.S01.E23.HDTV.mkv
 ```
 
 ### 正则模式
