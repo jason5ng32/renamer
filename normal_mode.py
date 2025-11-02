@@ -13,6 +13,7 @@ from utils import (
     console, Colors
 )
 from rich.text import Text
+from i18n import t
 
 def count_capture_groups(match_src: str, flags: str) -> int:
     """计算所有正则表达式的总捕获组数量"""
@@ -52,17 +53,17 @@ def count_replace_references(replace_expr: str) -> int:
     return max_ref
 
 def flow_normal_mode():
-    console.print(f"\n[{Colors.MODE_TITLE_BLUE}]== 正则模式 ==[/]")
+    console.print(f"\n[{Colors.MODE_TITLE_BLUE}]{t('normal_mode.title')}[/]")
     
-    dir_str = ask("请输入目录路径", default=".")
+    dir_str = ask(t('common.dir_prompt'), default=".")
     dir_path = Path(dir_str).expanduser().resolve()
     if not dir_path.exists() or not dir_path.is_dir():
-        console.print(f"[{Colors.ERROR}]目录不存在：[/]{dir_path}")
+        console.print(f"[{Colors.ERROR}]{t('common.dir_not_exists')}[/]{dir_path}")
         sys.exit(1)
 
     # 扩展名输入（必填项，不允许空值）
     while True:
-        ext = ask("请输入扩展名（不要带点）").lstrip(".").lower()
+        ext = ask(t('common.ext_prompt')).lstrip(".").lower()
         
         # 检查扩展名匹配的文件数量
         count, should_retry = check_matches_and_retry(dir_path, ext, match_src=None, flags="i")
@@ -71,14 +72,14 @@ def flow_normal_mode():
 
     # 匹配项输入
     while True:
-        console.print(f"\n[{Colors.BOLD}]匹配项说明：[/]")
+        console.print(f"\n[{Colors.BOLD}]{t('normal_mode.match_instruction_title')}[/]")
         # 使用 Text 对象来避免数字和特殊字符被意外着色
-        console.print(Text("- 留空（直接回车）= 将不查找匹配项，直接采用后续规则进行批量重命名", style=Colors.SECONDARY))
-        console.print(Text("- 自定义正则 = 将匹配文件名中的特定内容，并通过捕获组提取内容，用于新文件名", style=Colors.SECONDARY))
-        console.print(Text("-- 支持多个捕获组，在替换表达式中可用 $1, $2, $3... 引用", style=Colors.SECONDARY))
-        console.print(Text("-- 示例：([A-Z]+)(\\d+) 有两个捕获组，可用 $1 和 $2 引用", style=Colors.SECONDARY))
+        console.print(Text(t('normal_mode.match_instruction_empty'), style=Colors.SECONDARY))
+        console.print(Text(t('normal_mode.match_instruction_custom'), style=Colors.SECONDARY))
+        console.print(Text(t('normal_mode.match_instruction_groups'), style=Colors.SECONDARY))
+        console.print(Text(t('normal_mode.match_instruction_example'), style=Colors.SECONDARY))
         
-        match_src = ask("请输入匹配项（留空表示按序号重命名）", allow_empty=True)
+        match_src = ask(t('normal_mode.match_prompt'), allow_empty=True)
         
         # 留空就是空匹配
         if match_src == "":
@@ -95,7 +96,7 @@ def flow_normal_mode():
                 for pattern in patterns:
                     re.compile(pattern)  # 尝试编译以验证格式
             except re.error as e:
-                console.print(f"[{Colors.ERROR}]正则表达式格式错误：{e}[/]")
+                console.print(f"[{Colors.ERROR}]{t('normal_mode.regex_format_error')}[/]{e}")
                 continue
             
             # 正则模式下不使用任何默认 flags，完全遵循用户输入的正则表达式
@@ -111,28 +112,28 @@ def flow_normal_mode():
             total_capture_groups = count_capture_groups(match_src, flags)
             
             if total_capture_groups == 0:
-                console.print(f"[{Colors.WARNING}]警告：正则表达式中没有捕获组，无法提取内容进行替换。[/]")
-                if not ask_yes_no("是否继续？（将只匹配但不替换）", default=False):
+                console.print(f"[{Colors.WARNING}]{t('normal_mode.no_capture_groups')}[/]")
+                if not ask_yes_no(t('normal_mode.continue_no_replace'), default=False):
                     continue
                 replace_expr = None
             else:
                 # 如果有捕获组，需要替换表达式（无论是单捕获组还是多捕获组）
-                console.print(f"\n[{Colors.BOLD}]检测到 {total_capture_groups} 个捕获组。[/]")
+                console.print(f"\n[{Colors.BOLD}]{t('normal_mode.detected_groups', count=total_capture_groups)}[/]")
                 # 使用 Text 对象来避免数字和特殊字符被意外着色
-                console.print(Text("请在替换表达式中使用 $1, $2, $3... 来引用捕获组。", style=Colors.SECONDARY))
-                console.print(Text("示例：如果匹配 ([A-Z]+)(\\d+)，可用 '$1_$2' 或 '前缀$2' 等", style=Colors.SECONDARY))
+                console.print(Text(t('normal_mode.replace_expr_info'), style=Colors.SECONDARY))
+                console.print(Text(t('normal_mode.replace_expr_example'), style=Colors.SECONDARY))
                 
                 while True:
-                    replace_expr = ask("请输入替换表达式（使用 $1, $2... 引用捕获组）", allow_empty=False)
+                    replace_expr = ask(t('normal_mode.replace_expr_prompt'), allow_empty=False)
                     
                     # 验证替换表达式中的引用数量
                     max_ref = count_replace_references(replace_expr)
                     if max_ref > total_capture_groups:
-                        console.print(f"[{Colors.ERROR}]错误：替换表达式中引用了 ${max_ref}，但只有 {total_capture_groups} 个捕获组。[/]")
+                        console.print(f"[{Colors.ERROR}]{t('normal_mode.replace_ref_error', max=max_ref, total=total_capture_groups)}[/]")
                         continue
                     if max_ref == 0 and total_capture_groups > 0:
-                        console.print(f"[{Colors.WARNING}]警告：替换表达式中没有使用任何捕获组引用（$1, $2...）。[/]")
-                        if not ask_yes_no("是否继续？", default=True):
+                        console.print(f"[{Colors.WARNING}]{t('normal_mode.replace_no_ref_warning')}[/]")
+                        if not ask_yes_no(t('normal_mode.continue_question'), default=True):
                             continue
                     break
             
@@ -148,22 +149,22 @@ def flow_normal_mode():
     
     if match_src == "":
         # 空匹配模式：使用前缀+序号
-        to_prefix = ask("请输入前缀（将用于生成文件名，如：file_）")
+        to_prefix = ask(t('normal_mode.prefix_empty_prompt'))
         to_prefix = dotify_if_no_dot(to_prefix)
     elif total_capture_groups > 0:
         # 使用替换表达式模式：前缀和后缀都包含在替换表达式中，不需要额外询问
         pass
     else:
         # 无捕获组：需要前缀（虽然这种情况应该很少）
-        to_prefix = ask("请输入前缀（将用于生成文件名）")
+        to_prefix = ask(t('normal_mode.prefix_prompt'))
         to_prefix = dotify_if_no_dot(to_prefix)
     
     # 排序方式（仅空匹配模式需要）
     sort_key = "name"
     if match_src == "":
-        sort_key = ask_choice("编号排序方式：", 
-                             ["按文件名排序（name）", "按修改时间排序（mtime）"])
-        if sort_key.startswith("按文件名排序"):
+        sort_options = [t('normal_mode.sort_options.name'), t('normal_mode.sort_options.mtime')]
+        sort_choice = ask_choice(t('normal_mode.sort_prompt'), sort_options)
+        if sort_choice == t('normal_mode.sort_options.name'):
             sort_key = "name"
         else:
             sort_key = "mtime"
@@ -176,8 +177,8 @@ def flow_normal_mode():
     
     # 扩展名替换
     new_ext = ext
-    if ask_yes_no("是否替换扩展名？", default=False):
-        new_ext = ask("请输入新扩展名（不要带点）", default=ext).lstrip(".").lower()
+    if ask_yes_no(t('normal_mode.replace_ext_question'), default=False):
+        new_ext = ask(t('normal_mode.new_ext_prompt'), default=ext).lstrip(".").lower()
     
     # 生成计划（需要扩展 build_plans 函数支持新的参数）
     # 这里暂时先调用，后续需要修改 build_plans
@@ -186,15 +187,15 @@ def flow_normal_mode():
                                     total_capture_groups, new_ext)
     
     if not plans:
-        console.print(f"[{Colors.WARNING}]未找到可重命名的文件（检查目录/扩展名/匹配条件）。[/]")
+        console.print(f"[{Colors.WARNING}]{t('common.not_found_files')}[/]")
         sys.exit(0)
 
     plans = check_conflicts_or_exit(dir_path, plans, start, padding_width)
     if preview_and_confirm(dir_path, plans):
         two_phase_rename(dir_path, plans)
-        console.print(f"[{Colors.SUCCESS_BOLD}]✅ 重命名完成。[/]")
+        console.print(f"[{Colors.SUCCESS_BOLD}]{t('common.rename_complete')}[/]")
     else:
-        console.print(f"[{Colors.SECONDARY}]已取消。[/]")
+        console.print(f"[{Colors.SECONDARY}]{t('common.cancelled_operation')}[/]")
 
 def build_plans_normal_mode(dir_path: Path, ext: str, match_src: str, flags: str,
                             to_prefix: str, suffix: str, start: int, sort_key: str, 

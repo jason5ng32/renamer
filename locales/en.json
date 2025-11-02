@@ -1,0 +1,127 @@
+{
+  "main": {
+    "title": "🛠 Batch Rename Tool",
+    "intro": [
+      "Welcome to the Batch Rename Tool!",
+      "This tool helps you rename multiple files efficiently.",
+      "",
+      "Features:",
+      "  • Movie/TV Show Mode - Quick rename for media files",
+      "  • Regex Mode - Fully customizable batch renaming",
+      "",
+      "Select your preferred language to continue:"
+    ],
+    "language_prompt": "Select Language / 选择语言",
+    "language_options": {
+      "en": "English",
+      "zh": "中文 (Chinese)"
+    },
+    "mode_prompt": "Select Mode:",
+    "mode_options": {
+      "movie": "Movie Mode",
+      "regex": "Regex Mode (Fully Customizable)"
+    },
+    "cancelled": "Operation cancelled."
+  },
+  "common": {
+    "dir_prompt": "Enter directory path",
+    "dir_not_exists": "Directory does not exist:",
+    "ext_prompt": "Enter extension (without dot)",
+    "enter_content": "Please enter content.",
+    "enter_number": "Please enter a valid number.",
+    "invalid_number": "Invalid number, please try again.",
+    "cancelled_operation": "Operation cancelled.",
+    "not_found_files": "No files found to rename (check directory/extension/match conditions).",
+    "rename_complete": "✅ Rename completed.",
+    "confirm_rename": "Confirm to execute the above renaming?",
+    "directory": "Directory:",
+    "rename_plan": "Rename Plan",
+    "files_count": "files"
+  },
+  "movie_mode": {
+    "title": "== Movie Mode ==",
+    "ext_prompt": "Select the extension to process:",
+    "ext_custom": "Custom",
+    "ext_custom_prompt": "Enter extension (without dot)",
+    "match_type_info": "Match type is used to locate 'episode markers'.",
+    "match_type_prompt": "Select match type:",
+    "match_options": {
+      "e_digit": "E(\\d+) - Matches E01, E02, e10 formats (e.g., Show.Name.E22.mkv; case-insensitive by default)",
+      "s_e_digit": "S\\d+\\.E(\\d+) - Matches S01.E01, S02.E05 formats (e.g., Show.Name.S01.E22.mkv; case-insensitive by default)",
+      "ep_digit": "Ep(\\d+) - Matches Ep1, Ep10 formats (e.g., Show.Name.Ep22.mkv; case-insensitive by default)",
+      "custom": "Custom regex - Manually enter regex expression, customizable match options"
+    },
+    "custom_regex_prompt": "Enter custom regex (first capture group must be episode number, e.g., E(\\d+), only single expression supported)",
+    "custom_regex_single_only": "Custom mode only supports single regex expression, multiple expressions not supported (cannot contain comma).",
+    "custom_regex_valid": "Please enter a valid regex expression.",
+    "regex_need_capture": "Error: Regex must contain at least one capture group (in parentheses) to match episode numbers.",
+    "regex_capture_example": "Example: In E(\\d+), (\\d+) is the capture group",
+    "regex_format_error": "Regex format error:",
+    "match_options_info": "Match Options:",
+    "match_options_i": "  i = Case insensitive (recommended)",
+    "match_options_m": "  m = Multiline mode",
+    "match_options_s": "  s = Dot matches newline",
+    "match_options_combine": "  Can be combined, e.g., im, is, ims",
+    "match_options_empty": "  Press Enter = No match options",
+    "match_options_prompt": "Enter match options (press Enter for no options)",
+    "new_prefix_prompt": "Enter new prefix (e.g., State.of.Divinity.S01)",
+    "suffix_info": "Suffix = All content from 'episode marker' to extension in filename.",
+    "suffix_mode_prompt": "Suffix handling:",
+    "suffix_mode_options": {
+      "keep": "Keep original suffix",
+      "replace": "Replace with specified suffix"
+    },
+    "suffix_prompt": "Enter suffix (without extension)"
+  },
+  "normal_mode": {
+    "title": "== Regex Mode ==",
+    "match_instruction_title": "Match Item Instructions:",
+    "match_instruction_empty": "Empty (press Enter) = No matching, directly use subsequent rules for batch renaming",
+    "match_instruction_custom": "Custom regex = Match specific content in filenames and extract content through capture groups for new filenames",
+    "match_instruction_groups": "-- Supports multiple capture groups, use $1, $2, $3... in replacement expression to reference",
+    "match_instruction_example": "-- Example: ([A-Z]+)(\\d+) has two capture groups, use $1 and $2 to reference",
+    "match_prompt": "Enter match item (empty means sequential renaming)",
+    "regex_format_error": "Regex format error:",
+    "no_capture_groups": "Warning: No capture groups in regex, cannot extract content for replacement.",
+    "continue_no_replace": "Continue? (will match but not replace)",
+    "detected_groups": "Detected {count} capture groups.",
+    "replace_expr_info": "Use $1, $2, $3... in replacement expression to reference capture groups.",
+    "replace_expr_example": "Example: If matching ([A-Z]+)(\\d+), you can use '$1_$2' or 'prefix$2' etc.",
+    "replace_expr_prompt": "Enter replacement expression (use $1, $2... to reference capture groups)",
+    "replace_ref_error": "Error: Replacement expression references ${max}, but only {total} capture groups.",
+    "replace_no_ref_warning": "Warning: Replacement expression does not use any capture group references ($1, $2...).",
+    "continue_question": "Continue?",
+    "prefix_empty_prompt": "Enter prefix (will be used to generate filenames, e.g., file_)",
+    "prefix_prompt": "Enter prefix (will be used to generate filenames)",
+    "sort_prompt": "Numbering sort order:",
+    "sort_options": {
+      "name": "Sort by filename (name)",
+      "mtime": "Sort by modification time (mtime)"
+    },
+    "replace_ext_question": "Replace extension?",
+    "new_ext_prompt": "Enter new extension (without dot)"
+  },
+  "utils": {
+    "input_required": "Please enter content.",
+    "enter_index": "Enter index:",
+    "invalid_digit": "Please enter a numeric index.",
+    "invalid_index": "Invalid index, please try again.",
+    "start_number_prompt": "Starting number (supports 0)",
+    "start_number_negative": "Starting number cannot be negative.",
+    "padding_width_prompt": "Number of digits (for zero-padding, e.g., 2 means 01, 02; 0 means no padding)",
+    "padding_width_negative": "Number of digits cannot be negative.",
+    "found_matches": "Found {count} matching {ext} files{context}",
+    "no_matches": "No matching files found, reconfigure?",
+    "conflict_duplicate": "Conflict: Multiple source files will be renamed to the same target ->",
+    "conflict_exists": "Conflict: Target name already exists ->",
+    "more_conflicts": "... {remaining} more conflicts",
+    "auto_resolve_conflicts": "Automatically add numeric suffix to resolve conflicts?",
+    "conflict_resolve_title": "Set numeric numbering configuration for conflict resolution:",
+    "conflict_suffix": "Conflict suffix",
+    "conflict_resolved": "Automatically added numeric suffix to conflicting files.",
+    "conflict_detected": "⚠️ Conflicts detected.",
+    "handle_conflict_retry": "Please handle conflicts and retry.",
+    "rename_failed": "Rename failed:",
+    "tmp_files_notice": "Note: If aborted, temporary files containing '__tmp__' may remain in the directory, please clean up manually."
+  }
+}

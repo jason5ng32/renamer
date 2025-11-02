@@ -27,6 +27,12 @@ console = Console()
 # 创建 stderr 的 Console 实例用于错误输出
 console_err = Console(file=sys.stderr)
 
+# 导入翻译函数（延迟导入，避免循环依赖）
+def _t(key, **kwargs):
+    """延迟导入翻译函数"""
+    from i18n import t
+    return t(key, **kwargs)
+
 # 语义化的样式常量（基于 Rich）
 class Colors:
     """语义化样式映射（基于 Rich）"""
@@ -101,7 +107,7 @@ def ask(prompt: str, default: str = None, allow_empty: bool = False) -> str:
             console.print(f"[{Colors.PROMPT}]{prompt}[/]")
         
         # 在单独的一行显示输入提示符，用户在这一行输入
-        console.print(f"[{Colors.SECONDARY}]> [/]", end="")
+        console.print(f"[{Colors.SECONDARY}]>[/] ", end="")
         sys.stdout.flush()
         val = input().strip()
         
@@ -110,7 +116,7 @@ def ask(prompt: str, default: str = None, allow_empty: bool = False) -> str:
         if val == "" and allow_empty:
             return ""
         if val == "" and not allow_empty:
-            console.print(f"[{Colors.WARNING}]请输入内容。[/]")
+            console.print(f"[{Colors.WARNING}]{_t('utils.input_required')}[/]")
             continue
         return val
 
@@ -122,7 +128,7 @@ def ask_yes_no(prompt: str, default: bool = False) -> bool:
     # 先显示 prompt（换行）
     console.print(f"[{Colors.PROMPT}]{prompt}[/] ({d_text})")
     # 在单独的一行显示输入提示符
-    console.print(f"[{Colors.SECONDARY}]> [/]", end="")
+    console.print(f"[{Colors.SECONDARY}]>[/] ", end="")
     sys.stdout.flush()
     s = input().strip().lower()
     if s == "" and default is not None:
@@ -143,18 +149,18 @@ def ask_choice(prompt: str, options) -> str:
         console.print(option_text)
     while True:
         # 先显示 prompt（换行）
-        console.print(f"[{Colors.PROMPT}]请输入序号: [/]")
+        console.print(f"[{Colors.PROMPT}]{_t('utils.enter_index')}[/]")
         # 在单独的一行显示输入提示符
-        console.print(f"[{Colors.SECONDARY}]> [/]", end="")
+        console.print(f"[{Colors.SECONDARY}]>[/] ", end="")
         sys.stdout.flush()
         idx = input().strip()
         if not idx.isdigit():
-            console.print(f"[{Colors.WARNING}]请输入数字序号。[/]")
+            console.print(f"[{Colors.WARNING}]{_t('utils.invalid_digit')}[/]")
             continue
         idx = int(idx)
         if 1 <= idx <= len(options):
             return options[idx-1]
-        console.print(f"[{Colors.WARNING}]无效的序号，请重试。[/]")
+        console.print(f"[{Colors.WARNING}]{_t('utils.invalid_index')}[/]")
 
 # --------------------- 正则匹配工具 ---------------------
 def compile_matchers(match_src: str, flags: str):
@@ -231,28 +237,30 @@ def ask_numbering_config(prompt_prefix: str = "") -> tuple[int, int]:
     
     # 询问起始编号（支持0）
     while True:
-        start_str = ask(f"{prefix}起始编号（支持0）", default="0")
+        prompt_key = f"{prefix}{_t('utils.start_number_prompt')}" if prefix else _t('utils.start_number_prompt')
+        start_str = ask(prompt_key, default="0")
         try:
             start = int(start_str)
             if start < 0:
-                console.print(f"[{Colors.WARNING}]起始编号不能为负数。[/]")
+                console.print(f"[{Colors.WARNING}]{_t('utils.start_number_negative')}[/]")
                 continue
             break
         except ValueError:
-            console.print(f"[{Colors.WARNING}]请输入有效的数字。[/]")
+            console.print(f"[{Colors.WARNING}]{_t('common.enter_number')}[/]")
             continue
     
     # 询问数字位数（用于补零）
     while True:
-        padding_str = ask(f"{prefix}数字位数（用于补零，如设为2则显示01、02，设为0则不补零）", default="0")
+        prompt_key = f"{prefix}{_t('utils.padding_width_prompt')}" if prefix else _t('utils.padding_width_prompt')
+        padding_str = ask(prompt_key, default="0")
         try:
             padding_width = int(padding_str)
             if padding_width < 0:
-                console.print(f"[{Colors.WARNING}]数字位数不能为负数。[/]")
+                console.print(f"[{Colors.WARNING}]{_t('utils.padding_width_negative')}[/]")
                 continue
             break
         except ValueError:
-            console.print(f"[{Colors.WARNING}]请输入有效的数字。[/]")
+            console.print(f"[{Colors.WARNING}]{_t('common.enter_number')}[/]")
             continue
     
     return start, padding_width
@@ -260,8 +268,9 @@ def ask_numbering_config(prompt_prefix: str = "") -> tuple[int, int]:
 # --------------------- 文件操作 ---------------------
 def preview_and_confirm(dir_path: Path, plans):
     """预览重命名计划并确认"""
-    console.print(f"\n[{Colors.BOLD}]目录：[/][{Colors.INFO}]{dir_path}[/]")
-    console.print(f"[{Colors.BOLD}]重命名计划[/]（共 [{Colors.HIGHLIGHT}]{len(plans)}[/] 个）：\n")
+    console.print(f"\n[{Colors.BOLD}]{_t('common.directory')}[/][{Colors.INFO}]{dir_path}[/]")
+    files_count_text = _t('common.files_count')
+    console.print(f"[{Colors.BOLD}]{_t('common.rename_plan')}[/]（共 [{Colors.HIGHLIGHT}]{len(plans)}[/] {files_count_text}）：\n")
     for src, dst in plans:
         # 使用 Text 对象来避免文件名被解析为 Rich 标记，防止数字被意外着色
         src_text = Text(src, style=Colors.SECONDARY)
@@ -272,7 +281,7 @@ def preview_and_confirm(dir_path: Path, plans):
         console.print(arrow_text, end=" ")
         console.print(dst_text)
         console.print()  # 空行
-    return ask_yes_no("确认执行以上重命名吗？", default=False)
+    return ask_yes_no(_t('common.confirm_rename'), default=False)
 
 def two_phase_rename(dir_path: Path, plans):
     """两阶段安全重命名：避免链式覆盖。"""
@@ -287,8 +296,8 @@ def two_phase_rename(dir_path: Path, plans):
             b = dir_path / dst
             os.replace(a_tmp, b)
     except Exception as e:
-        console_err.print(f"[{Colors.ERROR_BOLD}]重命名失败：[/]{e}")
-        console_err.print(f'[{Colors.WARNING}]注意：若中止，目录中可能留下包含 "__tmp__" 的临时文件，请手动清理。[/]')
+        console_err.print(f"[{Colors.ERROR_BOLD}]{_t('utils.rename_failed')}[/]{e}")
+        console_err.print(f"[{Colors.WARNING}]{_t('utils.tmp_files_notice')}[/]")
         sys.exit(3)
 
 # --------------------- 匹配统计 ---------------------
@@ -315,8 +324,13 @@ def count_matches(dir_path: Path, ext: str, match_src: str = None, flags: str = 
     count = 0
     for p in files:
         base = p.stem
-        parts = pick_parts(base, matchers)
-        if parts:
+        # 直接检查是否匹配，不依赖 pick_parts（pick_parts 要求必须有捕获组）
+        matched = False
+        for reobj in matchers:
+            if reobj.search(base):
+                matched = True
+                break
+        if matched:
             count += 1
     return count
 
@@ -328,15 +342,15 @@ def check_matches_and_retry(dir_path: Path, ext: str, match_src: str = None, fla
     count = count_matches(dir_path, ext, match_src, flags)
     context_msg = f" [{prompt_context}]" if prompt_context else ""
     if count > 0:
-        console.print(f"[{Colors.WARNING}]找到 {count} 个匹配的 {ext} 文件{context_msg}[/]")
+        console.print(f"[{Colors.WARNING}]{_t('utils.found_matches', count=count, ext=ext, context=context_msg)}[/]")
     else:
-        console.print(f"[{Colors.ERROR}]找到 {count} 个匹配的 {ext} 文件{context_msg}[/]")
+        console.print(f"[{Colors.ERROR}]{_t('utils.found_matches', count=count, ext=ext, context=context_msg)}[/]")
     
     if count == 0:
-        if ask_yes_no("未找到匹配的文件，是否重新配置？", default=True):
+        if ask_yes_no(_t('utils.no_matches'), default=True):
             return (0, True)
         else:
-            console.print(f"[{Colors.SECONDARY}]已取消操作。[/]")
+            console.print(f"[{Colors.SECONDARY}]{_t('common.cancelled_operation')}[/]")
             sys.exit(0)
     return (count, False)
 
@@ -503,37 +517,37 @@ def check_conflicts_or_exit(dir_path: Path, plans, start: int = 0, padding_width
         # 使用 Text 对象来避免文件名被解析为 Rich 标记
         if conflict['type'] == 'duplicate':
             conflict_msg = Text()
-            conflict_msg.append("冲突：多个源文件会重命名为相同目标名 -> ", style=Colors.ERROR)
+            conflict_msg.append(f"{_t('utils.conflict_duplicate')} ", style=Colors.ERROR)
             conflict_msg.append(conflict['dst'], style=Colors.HIGHLIGHT)
             console_err.print(conflict_msg)
         else:
             conflict_msg = Text()
-            conflict_msg.append("冲突：目标名已存在 -> ", style=Colors.ERROR)
+            conflict_msg.append(f"{_t('utils.conflict_exists')} ", style=Colors.ERROR)
             conflict_msg.append(conflict['dst'], style=Colors.HIGHLIGHT)
             console_err.print(conflict_msg)
     
     if len(conflicts) > 2:
         remaining = len(conflicts) - 2
-        console_err.print(f"[{Colors.SECONDARY}]... 还有 {remaining} 个冲突[/]")
+        console_err.print(f"[{Colors.SECONDARY}]{_t('utils.more_conflicts', remaining=remaining)}[/]")
     
     if auto_resolve:
         # 自动解决：添加数字后缀（需要考虑已存在的文件）
         resolved_plans = resolve_conflicts_with_suffix(dir_path, plans, conflicts, start, padding_width)
-        console.print(f"\n[{Colors.SUCCESS}]已自动为冲突的文件添加数字后缀。[/]")
+        console.print(f"\n[{Colors.SUCCESS}]{_t('utils.conflict_resolved')}[/]")
         return resolved_plans
     
     # 询问用户是否自动解决
-    console_err.print(f"\n[{Colors.ERROR_BOLD}]⚠️ 检测到冲突。[/]")
+    console_err.print(f"\n[{Colors.ERROR_BOLD}]{_t('utils.conflict_detected')}[/]")
     
-    if ask_yes_no("是否自动为冲突的文件添加数字后缀来解决冲突？", default=True):
+    if ask_yes_no(_t('utils.auto_resolve_conflicts'), default=True):
         # 询问编号配置（和视频模式一致）
-        console.print(f"\n[{Colors.BOLD}]请设置冲突解决时的数字编号配置：[/]")
-        conflict_start, conflict_padding = ask_numbering_config("冲突后缀")
+        console.print(f"\n[{Colors.BOLD}]{_t('utils.conflict_resolve_title')}[/]")
+        conflict_start, conflict_padding = ask_numbering_config(_t('utils.conflict_suffix'))
         
         resolved_plans = resolve_conflicts_with_suffix(dir_path, plans, conflicts, conflict_start, conflict_padding)
-        console.print(f"[{Colors.SUCCESS}]已自动为冲突的文件添加数字后缀。[/]")
+        console.print(f"[{Colors.SUCCESS}]{_t('utils.conflict_resolved')}[/]")
         return resolved_plans
     else:
-        console_err.print(f"[{Colors.ERROR_BOLD}]请处理冲突后重试。[/]")
+        console_err.print(f"[{Colors.ERROR_BOLD}]{_t('utils.handle_conflict_retry')}[/]")
         sys.exit(2)
 
